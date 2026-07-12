@@ -30,43 +30,44 @@ class NumericKeypad extends StatelessWidget {
     switch (mode) {
       case KeypadMode.standard:
         layout = [
-          ['C', '( )', '%', '÷'],
+          ['Clear', '⌫', '%', '÷'],
           ['7', '8', '9', '×'],
           ['4', '5', '6', '−'],
           ['1', '2', '3', '+'],
-          ['0', '.', '⌫', '='],
+          ['00', '0', '.', '='],
         ];
         break;
       case KeypadMode.hex:
         layout = [
           ['A', 'B', 'C', '⌫'],
-          ['D', 'E', 'F', 'C'],
-          ['7', '8', '9', ''],
-          ['4', '5', '6', ''],
-          ['1', '2', '3', ''],
-          ['0', '.', '', ''],
+          ['D', 'E', 'F', 'Clear'],
+          ['7', '8', '9', '00'],
+          ['4', '5', '6', '.'],
+          ['1', '2', '3', '0'],
         ];
         break;
       case KeypadMode.temperature:
         layout = [
-          ['7', '8', '9', '⌫'],
-          ['4', '5', '6', 'C'],
-          ['1', '2', '3', '.'],
-          ['+/-', '0', '', ''],
+          ['Clear', '⌫', '%', '÷'],
+          ['7', '8', '9', '×'],
+          ['4', '5', '6', '−'],
+          ['1', '2', '3', '+'],
+          ['+/-', '0', '.', '='],
         ];
         break;
       case KeypadMode.partial:
         layout = [
-          ['7', '8', '9', '⌫'],
-          ['4', '5', '6', 'C'],
-          ['1', '2', '3', '.'],
-          ['0', '', '', ''],
+          ['Clear', '⌫', '%', '÷'],
+          ['7', '8', '9', '×'],
+          ['4', '5', '6', '−'],
+          ['1', '2', '3', '+'],
+          ['00', '0', '.', '='],
         ];
         break;
     }
 
     return Container(
-      color: AppColors.keypadBg,
+      color: const Color(0xFFF5F5F7),
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -78,24 +79,28 @@ class NumericKeypad extends StatelessWidget {
               }
 
               // Decide key colors
-              Color bg = AppColors.keyActive;
+              Color bg = Colors.white;
               Color text = AppColors.textDark;
 
               if (key == '=' || key == 'Calculate') {
                 bg = AppColors.primary;
                 text = Colors.white;
-              } else if (key == 'C' || key == '⌫' || key == 'C' || key == '( )' || key == '%' || key == '+/-') {
-                bg = AppColors.keyActive.withValues(alpha: 0.8);
+              } else if (key == 'Clear' || key == '⌫' || key == '( )' || key == '+/-') {
+                bg = Colors.white;
                 text = AppColors.primary;
               } else if (_isOperator(key)) {
-                bg = AppColors.keyActive.withValues(alpha: 0.8);
+                bg = Colors.white;
                 text = AppColors.primary;
+              } else if (key == '%') {
+                bg = Colors.white;
+                text = AppColors.primary.withValues(alpha: 0.4);
               }
 
               final bool enabled = _checkEnabled(key);
+              final displayLabel = key == 'Clear' ? 'C' : key;
 
               return KeypadKey(
-                label: key,
+                label: displayLabel,
                 backgroundColor: bg,
                 textColor: text,
                 onPressed: enabled ? () => onKeyPressed(key) : null,

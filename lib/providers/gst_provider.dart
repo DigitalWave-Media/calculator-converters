@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/utils/expression_evaluator.dart';
 
 class GstState {
   final String originalPrice;
@@ -11,7 +12,10 @@ class GstState {
     this.addGst = true,
   });
 
-  double get priceDouble => double.tryParse(originalPrice) ?? 0.0;
+  double get priceDouble {
+    final evaluated = ExpressionEvaluator.evaluate(originalPrice);
+    return double.tryParse(evaluated) ?? 0.0;
+  }
 
   double get computedFinalPrice {
     final double p = priceDouble;
@@ -54,17 +58,46 @@ class GstNotifier extends Notifier<GstState> {
     state = state.copyWith(originalPrice: price);
   }
 
+  bool _canAppendDecimal(String expression) {
+    final RegExp opRegExp = RegExp(r'[+\−\×\÷%]');
+    final matches = opRegExp.allMatches(expression);
+    if (matches.isEmpty) {
+      return !expression.contains('.');
+    } else {
+      final lastOpIndex = matches.last.start;
+      final lastNumberSegment = expression.substring(lastOpIndex + 1);
+      return !lastNumberSegment.contains('.');
+    }
+  }
+
   void onKeypadInput(String key) {
     String currentVal = state.originalPrice;
 
-    if (key == 'C') {
+    if (key == 'C' || key == 'Clear') {
       currentVal = '';
     } else if (key == '⌫') {
       if (currentVal.isNotEmpty) {
         currentVal = currentVal.substring(0, currentVal.length - 1);
       }
+    } else if (key == '=') {
+      currentVal = ExpressionEvaluator.evaluate(currentVal);
     } else {
-      if (key == '.' && currentVal.contains('.')) return;
+      if (key == '.') {
+        if (!_canAppendDecimal(currentVal)) return;
+      }
+      final List<String> ops = ['+', '−', '×', '÷', '%'];
+      if (ops.contains(key)) {
+        if (currentVal.isEmpty) {
+          if (key != '−') return;
+        } else {
+          final lastChar = currentVal[currentVal.length - 1];
+          if (ops.contains(lastChar)) {
+            currentVal = currentVal.substring(0, currentVal.length - 1) + key;
+            state = state.copyWith(originalPrice: currentVal);
+            return;
+          }
+        }
+      }
       currentVal += key;
     }
 

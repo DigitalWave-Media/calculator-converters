@@ -92,7 +92,6 @@ class _DropdownList extends StatefulWidget {
 
 class _DropdownListState extends State<_DropdownList> {
   late List<UnitOption> _filteredOptions;
-  String _searchQuery = '';
 
   @override
   void initState() {
@@ -102,7 +101,6 @@ class _DropdownListState extends State<_DropdownList> {
 
   void _filter(String query) {
     setState(() {
-      _searchQuery = query;
       _filteredOptions = widget.options
           .where((opt) =>
               opt.name.toLowerCase().contains(query.toLowerCase()) ||

@@ -22,82 +22,88 @@ class DiscountCalculatorScreen extends ConsumerWidget {
       appBar: const DetailHeader(title: 'Discount Calculator'),
       body: Column(
         children: [
-          const SizedBox(height: 16),
-          
-          // Original Price Row
-          _buildInputBox(
-            label: 'Original Price',
-            value: state.originalPrice.isEmpty ? '0' : state.originalPrice,
-            isActive: state.activeField == 1,
-            onTap: () => notifier.onFieldTapped(1),
-          ),
-          
-          const SizedBox(height: 12),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                  
+                  // Original Price Row
+                  _buildInputBox(
+                    label: 'Original Price',
+                    value: state.originalPrice.isEmpty ? '0' : state.originalPrice,
+                    isActive: state.activeField == 1,
+                    onTap: () => notifier.onFieldTapped(1),
+                  ),
+                  
+                  const SizedBox(height: 12),
 
-          // Discount Percent Row
-          _buildInputBox(
-            label: 'Discount (%)',
-            value: state.discountPercent.isEmpty ? '0' : state.discountPercent,
-            isActive: state.activeField == 2,
-            onTap: () => notifier.onFieldTapped(2),
-            suffix: '%',
-          ),
-          
-          // Results
-          Container(
-            margin: const EdgeInsets.all(16.0),
-            padding: const EdgeInsets.all(20.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+                  // Discount Percent Row
+                  _buildInputBox(
+                    label: 'Discount (%)',
+                    value: state.discountPercent.isEmpty ? '0' : state.discountPercent,
+                    isActive: state.activeField == 2,
+                    onTap: () => notifier.onFieldTapped(2),
+                    suffix: '%',
+                  ),
+                  
+                  // Results
+                  Container(
+                    margin: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'You Save',
+                              style: TextStyle(fontSize: 16, color: AppColors.textLight),
+                            ),
+                            Text(
+                              '₹${savedVal.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12.0),
+                          child: Divider(),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Final Price',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                            ),
+                            Text(
+                              '₹${finalPrice.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'You Save',
-                      style: TextStyle(fontSize: 16, color: AppColors.textLight),
-                    ),
-                    Text(
-                      '₹${savedVal.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12.0),
-                  child: Divider(),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Final Price',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                    ),
-                    Text(
-                      '₹${finalPrice.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
           ),
-
-          const Spacer(),
           NumericKeypad(
-            mode: KeypadMode.partial,
+            mode: KeypadMode.standard,
             onKeyPressed: (key) => notifier.onKeypadInput(key),
           ),
           const BottomDragHandle(),

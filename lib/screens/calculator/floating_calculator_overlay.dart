@@ -3,66 +3,136 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import 'calculator_state.dart';
 
-class CalculatorScreen extends ConsumerWidget {
-  const CalculatorScreen({super.key});
+class FloatingCalculatorOverlay extends StatefulWidget {
+  final VoidCallback onClose;
+  final bool isOpen;
+
+  const FloatingCalculatorOverlay({
+    super.key,
+    required this.onClose,
+    required this.isOpen,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final calcState = ref.watch(floatingCalculatorProvider);
-    final notifier = ref.read(floatingCalculatorProvider.notifier);
+  State<FloatingCalculatorOverlay> createState() => _FloatingCalculatorOverlayState();
+}
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-              children: [
-                // 1. Header with history icon
-                _buildHeaderBar(context, notifier),
+class _FloatingCalculatorOverlayState extends State<FloatingCalculatorOverlay> with SingleTickerProviderStateMixin {
+  // Animation controller for slide-in / slide-out of the calculator
+  late AnimationController _transitionController;
+  late Animation<Offset> _slideAnimation;
 
-                // 2. Main content area (Stack)
-                Expanded(
-                  child: Stack(
-                    children: [
-                      Column(
-                        children: [
-                          // Display Area — smaller flex pushes keypad up
-                          Expanded(
-                            flex: 20,
-                            child: _buildDisplayArea(context, calcState),
+  @override
+  void initState() {
+    super.initState();
+    _transitionController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 1.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _transitionController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    if (widget.isOpen) {
+      _transitionController.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant FloatingCalculatorOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isOpen != oldWidget.isOpen) {
+      if (widget.isOpen) {
+        _transitionController.forward();
+      } else {
+        _transitionController.reverse();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _transitionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.isOpen && _transitionController.isDismissed) {
+      return const SizedBox.shrink();
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Positioned.fill(
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Material(
+          elevation: 24,
+          color: isDark ? const Color(0xFF121214) : const Color(0xFFF9F9FC),
+          child: SafeArea(
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final calcState = ref.watch(floatingCalculatorProvider);
+                    final notifier = ref.read(floatingCalculatorProvider.notifier);
+
+                    return Column(
+                      children: [
+                        // 1. Header with history icon and close button
+                        _buildHeaderBar(context, notifier),
+
+                        // 2. Main content area (Stack)
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Column(
+                                children: [
+                                  // Display Area — smaller flex pushes keypad up
+                                  Expanded(
+                                    flex: 25,
+                                    child: _buildDisplayArea(context, calcState),
+                                  ),
+
+                                  // Chevron toggle (Static Anchor)
+                                  _buildChevronToggle(context, notifier, calcState.isScientific),
+
+                                  // Keypad — larger flex stretches grid upward
+                                  Expanded(
+                                    flex: 75,
+                                    child: _buildKeypad(context, calcState, notifier),
+                                  ),
+                                ],
+                              ),
+
+                              // History Overlay Panel
+                              _HistoryOverlay(
+                                isOpen: calcState.isHistoryOpen,
+                                history: calcState.history,
+                                onClearHistory: notifier.clearHistory,
+                                onTapItem: notifier.loadHistoryItem,
+                                onClose: () {
+                                  if (calcState.isHistoryOpen) {
+                                    notifier.toggleHistory();
+                                  }
+                                },
+                              ),
+                            ],
                           ),
-
-                          // Chevron toggle (Static Anchor)
-                          _buildChevronToggle(context, notifier, calcState.isScientific),
-
-                          // Keypad — larger flex stretches grid upward
-                          Expanded(
-                            flex: 80,
-                            child: _buildKeypad(context, calcState, notifier),
-                          ),
-                        ],
-                      ),
-
-                      // History Overlay Panel
-                      _HistoryOverlay(
-                        isOpen: calcState.isHistoryOpen,
-                        history: calcState.history,
-                        onClearHistory: notifier.clearHistory,
-                        onTapItem: notifier.loadHistoryItem,
-                        onClose: () {
-                          if (calcState.isHistoryOpen) {
-                            notifier.toggleHistory();
-                          }
-                        },
-                      ),
-                    ],
-                  ),
+                        ),
+                        
+                        const SizedBox(height: 4),
+                      ],
+                    );
+                  },
                 ),
-                
-                const SizedBox(height: 12),
-              ],
+              ),
             ),
           ),
         ),
@@ -79,8 +149,17 @@ class CalculatorScreen extends ConsumerWidget {
         color: Colors.transparent,
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Close / Back Button (Replaces old Menu)
+          IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, size: 24),
+            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: widget.onClose,
+          ),
+
           // History Toggle Button (Moved to top right)
           IconButton(
             icon: const Icon(Icons.history_rounded, size: 24),
@@ -132,7 +211,6 @@ class CalculatorScreen extends ConsumerWidget {
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOutCubic,
                               style: TextStyle(
-                                fontFamily: 'Roboto',
                                 fontSize: calcState.isCalculated ? 28 : 75,
                                 fontWeight: FontWeight.w700,
                                 color: isDark
@@ -165,7 +243,6 @@ class CalculatorScreen extends ConsumerWidget {
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeOutCubic,
                         style: TextStyle(
-                          fontFamily: 'Roboto',
                           fontSize: calcState.isCalculated ? 60 : 32,
                           fontWeight: calcState.isCalculated ? FontWeight.w700 : FontWeight.w500,
                           color: calcState.isCalculated
@@ -188,6 +265,8 @@ class CalculatorScreen extends ConsumerWidget {
       },
     );
   }
+
+  // History panel helper removed in favor of custom _HistoryOverlay component
 
   // KEYPAD EXPANDER CHEVRON
   Widget _buildChevronToggle(BuildContext context, FloatingCalculatorNotifier notifier, bool isScientific) {
@@ -221,7 +300,7 @@ class CalculatorScreen extends ConsumerWidget {
     FloatingCalculatorState calcState, 
     FloatingCalculatorNotifier notifier,
   ) {
-    const double keyPadding = 2.0;
+    const double keyPadding = 6.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -236,7 +315,7 @@ class CalculatorScreen extends ConsumerWidget {
             final sciHeight = t * sciTargetHeight;
 
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 1.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
                   SizedBox(
@@ -447,64 +526,54 @@ class _CalculatorKeyButtonState extends State<_CalculatorKeyButton> with SingleT
             ],
           ),
           alignment: Alignment.center,
-          child: Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: widget.spec.isIcon
-                  ? Icon(
-                      widget.spec.icon,
-                      size: 28,
-                      color: textColor,
-                    )
-                  : (widget.spec.tagText != null)
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              widget.spec.label,
-                              style: TextStyle(
-                                fontFamily: 'Roboto',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: widget.spec.tagText == 'DEG'
-                                    ? const Color(0xFF8B5CF6).withValues(alpha: 0.12)
-                                    : const Color(0xFF10B981).withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                widget.spec.tagText!,
-                                style: TextStyle(
-                                  fontFamily: 'Roboto',
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: widget.spec.tagText == 'DEG'
-                                      ? const Color(0xFF8B5CF6)
-                                      : const Color(0xFF10B981),
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      : Text(
+          child: widget.spec.isIcon
+              ? Icon(
+                  widget.spec.icon,
+                  size: 28,
+                  color: textColor,
+                )
+              : (widget.spec.tagText != null)
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
                           widget.spec.label,
                           style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: widget.isSci ? 18 : 30,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                             color: textColor,
                           ),
                         ),
-            ),
-          ),
+                        const SizedBox(height: 2),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: widget.spec.tagText == 'DEG'
+                                ? const Color(0xFF8B5CF6).withValues(alpha: 0.12)
+                                : const Color(0xFF10B981).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            widget.spec.tagText!,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: widget.spec.tagText == 'DEG'
+                                  ? const Color(0xFF8B5CF6)
+                                  : const Color(0xFF10B981),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      widget.spec.label,
+                      style: TextStyle(
+                        fontSize: widget.isSci ? 18 : 30,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
         ),
       ),
     );
@@ -739,7 +808,6 @@ class _HistoryOverlayState extends State<_HistoryOverlay> with SingleTickerProvi
                                   Text(
                                     'No history yet',
                                     style: TextStyle(
-                                      fontFamily: 'Roboto',
                                       fontSize: 15,
                                       fontWeight: FontWeight.w500,
                                       color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
@@ -795,7 +863,6 @@ class _HistoryOverlayState extends State<_HistoryOverlay> with SingleTickerProvi
               child: Text(
                 group.title.toUpperCase(),
                 style: TextStyle(
-                  fontFamily: 'Roboto',
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.2,
@@ -825,17 +892,16 @@ class _HistoryOverlayState extends State<_HistoryOverlay> with SingleTickerProvi
                               item.expression,
                               textAlign: TextAlign.right,
                               style: TextStyle(
-                                  fontFamily: 'Roboto',
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w400,
-                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w400,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               '= ${item.result}',
                               textAlign: TextAlign.right,
                               style: TextStyle(
-                                fontFamily: 'Roboto',
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                                 color: isDark ? const Color(0xFFC9A6BA) : const Color(0xFF6E4D60),

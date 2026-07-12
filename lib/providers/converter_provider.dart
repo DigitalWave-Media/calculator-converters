@@ -4,6 +4,7 @@ import '../core/utils/temperature_converter.dart';
 import '../core/utils/base_converter.dart';
 import '../models/unit_option.dart';
 import '../services/unit_preference_service.dart';
+import '../core/utils/expression_evaluator.dart';
 
 final unitPreferenceProvider = Provider<UnitPreferenceService>((ref) {
   return UnitPreferenceService();
@@ -92,11 +93,23 @@ class ConverterNotifier extends Notifier<ConverterState> {
     _recalculate(triggeredByField: state.activeField);
   }
 
+  bool _canAppendDecimal(String expression) {
+    final RegExp opRegExp = RegExp(r'[+\−\×\÷%]');
+    final matches = opRegExp.allMatches(expression);
+    if (matches.isEmpty) {
+      return !expression.contains('.');
+    } else {
+      final lastOpIndex = matches.last.start;
+      final lastNumberSegment = expression.substring(lastOpIndex + 1);
+      return !lastNumberSegment.contains('.');
+    }
+  }
+
   void onKeypadInput(String key) {
     final int active = state.activeField;
     String currentVal = active == 1 ? state.valueA : state.valueB;
 
-    if (key == 'C') {
+    if (key == 'C' || key == 'Clear') {
       currentVal = '';
     } else if (key == '⌫') {
       if (currentVal.isNotEmpty) {
@@ -108,6 +121,8 @@ class ConverterNotifier extends Notifier<ConverterState> {
       } else if (currentVal.isNotEmpty) {
         currentVal = '-$currentVal';
       }
+    } else if (key == '=') {
+      currentVal = ExpressionEvaluator.evaluate(currentVal);
     } else {
       if (category == ConverterCategory.numeral) {
         final radix = active == 1 ? state.unitA.multiplier.toInt() : state.unitB.multiplier.toInt();
@@ -116,7 +131,28 @@ class ConverterNotifier extends Notifier<ConverterState> {
           return;
         }
       } else {
-        if (key == '.' && currentVal.contains('.')) return;
+        if (key == '.') {
+          if (!_canAppendDecimal(currentVal)) return;
+        }
+        // Handle operator replacement
+        final List<String> ops = ['+', '−', '×', '÷', '%'];
+        if (ops.contains(key)) {
+          if (currentVal.isEmpty) {
+            if (key != '−') return;
+          } else {
+            final lastChar = currentVal[currentVal.length - 1];
+            if (ops.contains(lastChar)) {
+              currentVal = currentVal.substring(0, currentVal.length - 1) + key;
+              if (active == 1) {
+                state = state.copyWith(valueA: currentVal);
+              } else {
+                state = state.copyWith(valueB: currentVal);
+              }
+              _recalculate(triggeredByField: active);
+              return;
+            }
+          }
+        }
       }
 
       currentVal += key;
@@ -161,8 +197,9 @@ class ConverterNotifier extends Notifier<ConverterState> {
   }
 
   String _convertValue(String val, UnitOption from, UnitOption to) {
+    final evaluated = ExpressionEvaluator.evaluate(val);
     if (category == ConverterCategory.temperature) {
-      final double parsed = double.tryParse(val) ?? 0.0;
+      final double parsed = double.tryParse(evaluated) ?? 0.0;
       final double converted = TemperatureConverter.convert(parsed, from.name, to.name);
       return _formatDouble(converted);
     } else if (category == ConverterCategory.numeral) {
@@ -170,7 +207,7 @@ class ConverterNotifier extends Notifier<ConverterState> {
       final int toRadix = to.multiplier.toInt();
       return BaseConverter.convert(val, fromRadix, toRadix);
     } else {
-      final double parsed = double.tryParse(val) ?? 0.0;
+      final double parsed = double.tryParse(evaluated) ?? 0.0;
       final double baseVal = parsed * from.multiplier;
       final double converted = baseVal / to.multiplier;
       return _formatDouble(converted);

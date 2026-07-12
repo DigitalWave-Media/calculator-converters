@@ -56,32 +56,39 @@ class GenericConverterScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          const SizedBox(height: 16),
-          // Field A
-          UnitSelectorField(
-            label: 'From',
-            selectedUnit: state.unitA,
-            displayValue: state.valueA.isEmpty ? '0' : state.valueA,
-            options: allUnits.where((u) => u != state.unitB).toList(),
-            onUnitChanged: (unit) => notifier.onUnitSelected(1, unit),
-            isActive: state.activeField == 1,
-            onTapField: () => notifier.onFieldTapped(1),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                  // Field A
+                  UnitSelectorField(
+                    label: 'From',
+                    selectedUnit: state.unitA,
+                    displayValue: state.valueA.isEmpty ? '0' : state.valueA,
+                    options: allUnits.where((u) => u != state.unitB).toList(),
+                    onUnitChanged: (unit) => notifier.onUnitSelected(1, unit),
+                    isActive: state.activeField == 1,
+                    onTapField: () => notifier.onFieldTapped(1),
+                  ),
+                  const SizedBox(height: 8),
+                  // Field B
+                  UnitSelectorField(
+                    label: 'To',
+                    selectedUnit: state.unitB,
+                    displayValue: state.valueB.isEmpty ? '0' : state.valueB,
+                    options: allUnits.where((u) => u != state.unitA).toList(),
+                    onUnitChanged: (unit) => notifier.onUnitSelected(2, unit),
+                    isActive: state.activeField == 2,
+                    onTapField: () => notifier.onFieldTapped(2),
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
-          // Field B
-          UnitSelectorField(
-            label: 'To',
-            selectedUnit: state.unitB,
-            displayValue: state.valueB.isEmpty ? '0' : state.valueB,
-            options: allUnits.where((u) => u != state.unitA).toList(),
-            onUnitChanged: (unit) => notifier.onUnitSelected(2, unit),
-            isActive: state.activeField == 2,
-            onTapField: () => notifier.onFieldTapped(2),
-          ),
-          const Spacer(),
           // Numeric Keyboard
           NumericKeypad(
-            mode: KeypadMode.partial,
+            mode: KeypadMode.standard,
             onKeyPressed: (key) => notifier.onKeypadInput(key),
           ),
           const BottomDragHandle(),

@@ -19,4 +19,5 @@ class AppRoutes {
   static const String bmi = '/bmi';
   static const String finance = '/finance';
   static const String date = '/date';
+  static const String numToWord = '/num_to_word';
 }

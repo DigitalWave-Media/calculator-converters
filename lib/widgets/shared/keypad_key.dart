@@ -19,6 +19,12 @@ class KeypadKey extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDigit = RegExp(r'^\d+$').hasMatch(label) || label == '.' || label == '00';
+    final bool isBackspace = label == '⌫';
+
+    final fontWeight = isDigit ? FontWeight.w300 : FontWeight.w400;
+    final double fontSize = isDigit ? 26 : 24;
+
     return Expanded(
       flex: isDoubleWidth ? 2 : 1,
       child: Padding(
@@ -32,16 +38,25 @@ class KeypadKey extends StatelessWidget {
             child: Container(
               height: 60,
               alignment: Alignment.center,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  color: onPressed == null
-                      ? AppColors.textLight.withValues(alpha: 0.5)
-                      : textColor,
-                ),
-              ),
+              child: isBackspace
+                  ? Icon(
+                      Icons.backspace_outlined,
+                      size: 24,
+                      color: onPressed == null
+                          ? AppColors.textLight.withValues(alpha: 0.5)
+                          : textColor,
+                    )
+                  : Text(
+                      label,
+                      style: TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: fontSize,
+                        fontWeight: fontWeight,
+                        color: onPressed == null
+                            ? AppColors.textLight.withValues(alpha: 0.5)
+                            : textColor,
+                      ),
+                    ),
             ),
           ),
         ),

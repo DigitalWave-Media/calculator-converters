@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/theme/app_colors.dart';
 import '../widgets/shared/tab_header.dart';
 import 'calculator/calculator_screen.dart';
 import 'converter_hub/converter_hub_screen.dart';
@@ -34,6 +35,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           TabHeader(

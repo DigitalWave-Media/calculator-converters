@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/constants/routes.dart';
 import '../../widgets/shared/bottom_drag_handle.dart';
@@ -39,12 +40,14 @@ class ConverterHubScreen extends StatelessWidget {
     HubItem(name: 'BMI', icon: Icons.accessibility_new, route: AppRoutes.bmi, color: Colors.cyan),
     HubItem(name: 'Finance', icon: Icons.account_balance, route: AppRoutes.finance, color: Colors.purpleAccent),
     HubItem(name: 'Date', icon: Icons.calendar_month, route: AppRoutes.date, color: Colors.redAccent),
+    HubItem(name: 'Num to Word', icon: Icons.text_fields_outlined, route: AppRoutes.numToWord, color: Colors.teal),
   ];
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
@@ -61,14 +64,14 @@ class ConverterHubScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final item = items[index];
                   return Card(
-                    elevation: 1,
+                    elevation: 0,
+                    margin: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: AppColors.divider.withValues(alpha: 0.2)),
                     ),
-                    color: Colors.white,
+                    color: Colors.transparent,
                     child: InkWell(
-                      onTap: () => Navigator.pushNamed(context, item.route),
+                      onTap: () => context.push(item.route),
                       borderRadius: BorderRadius.circular(16),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),

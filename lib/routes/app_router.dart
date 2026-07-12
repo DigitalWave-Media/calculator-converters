@@ -13,6 +13,7 @@ import '../screens/discount_calculator_screen.dart';
 import '../screens/bmi_calculator_screen.dart';
 import '../screens/finance_calculator_screen.dart';
 import '../screens/date_calculator_screen.dart';
+import '../screens/converters/number_to_word_converter_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -88,6 +89,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.date,
         builder: (context, state) => const DateCalculatorScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.numToWord,
+        builder: (context, state) => const NumberToWordConverterScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

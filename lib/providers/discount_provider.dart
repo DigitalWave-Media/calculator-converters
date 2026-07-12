@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/utils/expression_evaluator.dart';
 
 class DiscountState {
   final String originalPrice;
@@ -11,8 +12,14 @@ class DiscountState {
     this.activeField = 1,
   });
 
-  double get priceDouble => double.tryParse(originalPrice) ?? 0.0;
-  double get discountDouble => double.tryParse(discountPercent) ?? 0.0;
+  double get priceDouble {
+    final evaluated = ExpressionEvaluator.evaluate(originalPrice);
+    return double.tryParse(evaluated) ?? 0.0;
+  }
+  double get discountDouble {
+    final evaluated = ExpressionEvaluator.evaluate(discountPercent);
+    return double.tryParse(evaluated) ?? 0.0;
+  }
 
   double get computedFinalPrice {
     final double p = priceDouble;
@@ -48,22 +55,67 @@ class DiscountNotifier extends Notifier<DiscountState> {
     state = state.copyWith(activeField: field);
   }
 
+  bool _canAppendDecimal(String expression) {
+    final RegExp opRegExp = RegExp(r'[+\−\×\÷%]');
+    final matches = opRegExp.allMatches(expression);
+    if (matches.isEmpty) {
+      return !expression.contains('.');
+    } else {
+      final lastOpIndex = matches.last.start;
+      final lastNumberSegment = expression.substring(lastOpIndex + 1);
+      return !lastNumberSegment.contains('.');
+    }
+  }
+
   void onKeypadInput(String key) {
     final int active = state.activeField;
     String currentVal = active == 1 ? state.originalPrice : state.discountPercent;
 
-    if (key == 'C') {
+    if (key == 'C' || key == 'Clear') {
       currentVal = '';
     } else if (key == '⌫') {
       if (currentVal.isNotEmpty) {
         currentVal = currentVal.substring(0, currentVal.length - 1);
       }
-    } else {
-      if (key == '.' && currentVal.contains('.')) return;
-      
+    } else if (key == '=') {
+      final evaluated = ExpressionEvaluator.evaluate(currentVal);
       if (active == 2) {
-        final double? testVal = double.tryParse(currentVal + key);
-        if (testVal != null && testVal > 100.0) return;
+        final double? parsedVal = double.tryParse(evaluated);
+        if (parsedVal != null && parsedVal > 100.0) {
+          currentVal = '100';
+        } else {
+          currentVal = evaluated;
+        }
+      } else {
+        currentVal = evaluated;
+      }
+    } else {
+      if (key == '.') {
+        if (!_canAppendDecimal(currentVal)) return;
+      }
+      
+      final List<String> ops = ['+', '−', '×', '÷', '%'];
+      if (ops.contains(key)) {
+        if (currentVal.isEmpty) {
+          if (key != '−') return;
+        } else {
+          final lastChar = currentVal[currentVal.length - 1];
+          if (ops.contains(lastChar)) {
+            currentVal = currentVal.substring(0, currentVal.length - 1) + key;
+            if (active == 1) {
+              state = state.copyWith(originalPrice: currentVal);
+            } else {
+              state = state.copyWith(discountPercent: currentVal);
+            }
+            return;
+          }
+        }
+      } else {
+        // If typing digits in discount field, enforce the 100% check on plain numbers
+        if (active == 2 && !currentVal.contains(RegExp(r'[+\−\×\÷%]'))) {
+          final double? testVal = double.tryParse(currentVal + key);
+          if (testVal != null && testVal > 100.0) return;
+        }
       }
       currentVal += key;
     }

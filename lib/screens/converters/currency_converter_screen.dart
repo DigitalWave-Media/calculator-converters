@@ -147,7 +147,7 @@ class _CurrencyConverterScreenState extends ConsumerState<CurrencyConverterScree
           ),
 
           NumericKeypad(
-            mode: KeypadMode.partial,
+            mode: KeypadMode.standard,
             onKeyPressed: (key) => notifier.onKeypadInput(key),
           ),
           const BottomDragHandle(),

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/currency_option.dart';
 import '../services/currency_rate_service.dart';
+import '../core/utils/expression_evaluator.dart';
 
 final currencyRateServiceProvider = Provider<CurrencyRateService>((ref) {
   return CurrencyRateService();
@@ -87,17 +88,46 @@ class CurrencyNotifier extends Notifier<CurrencyState> {
     );
   }
 
+  bool _canAppendDecimal(String expression) {
+    final RegExp opRegExp = RegExp(r'[+\−\×\÷%]');
+    final matches = opRegExp.allMatches(expression);
+    if (matches.isEmpty) {
+      return !expression.contains('.');
+    } else {
+      final lastOpIndex = matches.last.start;
+      final lastNumberSegment = expression.substring(lastOpIndex + 1);
+      return !lastNumberSegment.contains('.');
+    }
+  }
+
   void onKeypadInput(String key) {
     String currentVal = state.activeValue;
 
-    if (key == 'C') {
+    if (key == 'C' || key == 'Clear') {
       currentVal = '';
     } else if (key == '⌫') {
       if (currentVal.isNotEmpty) {
         currentVal = currentVal.substring(0, currentVal.length - 1);
       }
+    } else if (key == '=') {
+      currentVal = ExpressionEvaluator.evaluate(currentVal);
     } else {
-      if (key == '.' && currentVal.contains('.')) return;
+      if (key == '.') {
+        if (!_canAppendDecimal(currentVal)) return;
+      }
+      final List<String> ops = ['+', '−', '×', '÷', '%'];
+      if (ops.contains(key)) {
+        if (currentVal.isEmpty) {
+          if (key != '−') return;
+        } else {
+          final lastChar = currentVal[currentVal.length - 1];
+          if (ops.contains(lastChar)) {
+            currentVal = currentVal.substring(0, currentVal.length - 1) + key;
+            state = state.copyWith(activeValue: currentVal);
+            return;
+          }
+        }
+      }
       currentVal += key;
     }
 
@@ -116,7 +146,8 @@ class CurrencyNotifier extends Notifier<CurrencyState> {
       orElse: () => CurrencyRateService.defaultRates[0],
     );
 
-    final double activeVal = double.tryParse(state.activeValue) ?? 0.0;
+    final evaluated = ExpressionEvaluator.evaluate(state.activeValue);
+    final double activeVal = double.tryParse(evaluated) ?? 0.0;
     if (activeVal == 0.0) return '0';
 
     final double usdValue = activeVal / activeRateOption.rate;
