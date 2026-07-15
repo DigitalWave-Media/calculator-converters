@@ -1,0 +1,11 @@
+# Key properties for release signing
+# Copy this file to `key.properties` and fill in your values.
+# Do NOT commit the real key.properties file to version control.
+#
+# To generate a keystore:
+#   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+
+storePassword=<your-store-password>
+keyPassword=<your-key-password>
+keyAlias=upload
+storeFile=<path-to-your-upload-keystore.jks>

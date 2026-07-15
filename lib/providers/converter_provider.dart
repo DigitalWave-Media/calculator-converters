@@ -16,6 +16,7 @@ class ConverterState {
   final String valueA;
   final String valueB;
   final int activeField; // 1 = fieldA, 2 = fieldB
+  final bool isExpanded;
 
   const ConverterState({
     required this.unitA,
@@ -23,6 +24,7 @@ class ConverterState {
     this.valueA = '',
     this.valueB = '',
     this.activeField = 1,
+    this.isExpanded = false,
   });
 
   ConverterState copyWith({
@@ -31,6 +33,7 @@ class ConverterState {
     String? valueA,
     String? valueB,
     int? activeField,
+    bool? isExpanded,
   }) {
     return ConverterState(
       unitA: unitA ?? this.unitA,
@@ -38,6 +41,7 @@ class ConverterState {
       valueA: valueA ?? this.valueA,
       valueB: valueB ?? this.valueB,
       activeField: activeField ?? this.activeField,
+      isExpanded: isExpanded ?? this.isExpanded,
     );
   }
 }
@@ -55,6 +59,7 @@ class ConverterNotifier extends Notifier<ConverterState> {
     return ConverterState(
       unitA: units[0],
       unitB: units[1],
+      isExpanded: false,
     );
   }
 
@@ -79,7 +84,19 @@ class ConverterNotifier extends Notifier<ConverterState> {
   }
 
   void onFieldTapped(int field) {
-    state = state.copyWith(activeField: field);
+    state = state.copyWith(
+      activeField: field,
+      isExpanded: false,
+    );
+  }
+
+  void toggleExpanded() {
+    state = state.copyWith(isExpanded: !state.isExpanded);
+  }
+
+  String convertValueTo(String val, UnitOption from, UnitOption to) {
+    if (val.isEmpty) return '';
+    return _convertValue(val, from, to);
   }
 
   void onUnitSelected(int field, UnitOption unit) {
@@ -122,7 +139,9 @@ class ConverterNotifier extends Notifier<ConverterState> {
         currentVal = '-$currentVal';
       }
     } else if (key == '=') {
-      currentVal = ExpressionEvaluator.evaluate(currentVal);
+      if (category != ConverterCategory.numeral) {
+        currentVal = ExpressionEvaluator.evaluate(currentVal);
+      }
     } else {
       if (category == ConverterCategory.numeral) {
         final radix = active == 1 ? state.unitA.multiplier.toInt() : state.unitB.multiplier.toInt();

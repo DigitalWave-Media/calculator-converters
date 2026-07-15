@@ -14,6 +14,9 @@ class DetailHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : AppColors.textDark;
+
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
@@ -21,12 +24,12 @@ class DetailHeader extends StatelessWidget implements PreferredSizeWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark),
+              icon: Icon(Icons.arrow_back_ios_new, color: textColor),
               onPressed: () => Navigator.of(context).pop(),
             ),
             Text(
               title,
-              style: AppTextStyles.titleMedium,
+              style: AppTextStyles.titleMedium.copyWith(color: textColor),
             ),
             Row(
               mainAxisSize: MainAxisSize.min,

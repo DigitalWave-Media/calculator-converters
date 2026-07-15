@@ -4,7 +4,6 @@ import '../../core/theme/app_colors.dart';
 import '../../providers/num_to_word_provider.dart';
 import '../../widgets/shared/detail_header.dart';
 import '../../widgets/shared/numeric_keypad.dart';
-import '../../widgets/shared/bottom_drag_handle.dart';
 
 class NumberToWordConverterScreen extends ConsumerWidget {
   const NumberToWordConverterScreen({super.key});
@@ -43,83 +42,107 @@ class NumberToWordConverterScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(numToWordProvider);
     final notifier = ref.read(numToWordProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: const DetailHeader(
         title: 'Number to Word',
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Designated Display Area for Input Number / Expression
-                  Container(
-                    padding: const EdgeInsets.all(20.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F7),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    alignment: Alignment.centerRight,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        _formatDisplayValue(state.inputExpression),
-                        style: const TextStyle(
-                          fontFamily: 'Roboto',
-                          fontSize: 36,
-                          fontWeight: FontWeight.w300,
-                          color: AppColors.textDark,
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Designated Display Area for Input Number / Expression
+                    SizedBox(
+                      height: 56,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F7),
+                          borderRadius: BorderRadius.circular(16),
+                          border: isDark ? Border.all(color: const Color(0xFF2C2C2E)) : null,
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Enter Number',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: isDark ? Colors.white70 : AppColors.textLight,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    _formatDisplayValue(state.inputExpression),
+                                    style: TextStyle(
+                                      fontFamily: 'Roboto',
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w300,
+                                      color: isDark ? Colors.white : AppColors.textDark,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Stacked Language Outputs
-                  _buildLanguageCard(
-                    title: 'ENGLISH',
-                    sub: 'International System',
-                    word: state.englishWord,
-                    icon: Icons.language,
-                    gradientStart: const Color(0xFF2C3E50),
-                    gradientEnd: const Color(0xFF3498DB),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildLanguageCard(
-                    title: 'HINDI (हिन्दी)',
-                    sub: 'Indian System (Devanagari)',
-                    word: state.hindiWord,
-                    icon: Icons.translate,
-                    gradientStart: const Color(0xFFE67E22),
-                    gradientEnd: const Color(0xFFD35400),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildLanguageCard(
-                    title: 'BENGALI (বাংলা)',
-                    sub: 'Indian System (Bengali)',
-                    word: state.bengaliWord,
-                    icon: Icons.text_fields,
-                    gradientStart: const Color(0xFF27AE60),
-                    gradientEnd: const Color(0xFF2ECC71),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+  
+                    // Stacked Language Outputs (English at top, Bengali in middle, Hindi at bottom)
+                    _buildLanguageCard(
+                      title: 'ENGLISH',
+                      sub: 'International System',
+                      word: state.englishWord,
+                      icon: Icons.language,
+                      gradientStart: const Color(0xFF2C3E50),
+                      gradientEnd: const Color(0xFF3498DB),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildLanguageCard(
+                      title: 'BENGALI (বাংলা)',
+                      sub: 'Indian System (Bengali)',
+                      word: state.bengaliWord,
+                      icon: Icons.text_fields,
+                      gradientStart: const Color(0xFF27AE60),
+                      gradientEnd: const Color(0xFF2ECC71),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildLanguageCard(
+                      title: 'HINDI (हिन्दी)',
+                      sub: 'Indian System (Devanagari)',
+                      word: state.hindiWord,
+                      icon: Icons.translate,
+                      gradientStart: const Color(0xFFE67E22),
+                      gradientEnd: const Color(0xFFD35400),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          
-          // Custom Keypad in Standard Mode
-          NumericKeypad(
-            mode: KeypadMode.standard,
-            onKeyPressed: (key) => notifier.onKeypadInput(key),
-          ),
-          const BottomDragHandle(),
-        ],
+            
+            // Custom Keypad in Standard Mode
+            NumericKeypad(
+              mode: KeypadMode.standard,
+              onKeyPressed: (key) => notifier.onKeypadInput(key),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -142,7 +165,7 @@ class NumberToWordConverterScreen extends ConsumerWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -155,31 +178,39 @@ class NumberToWordConverterScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: gradientStart,
-                      letterSpacing: 1.1,
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: gradientStart,
+                        letterSpacing: 1.1,
+                      ),
                     ),
-                  ),
-                  Text(
-                    sub,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppColors.textLight,
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        sub,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: AppColors.textLight,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.all(6.0),
                 decoration: BoxDecoration(
-                  color: gradientStart.withOpacity(0.08),
+                  color: gradientStart.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

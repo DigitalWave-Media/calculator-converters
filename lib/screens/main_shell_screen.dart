@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../core/theme/app_colors.dart';
+import 'package:flutter/services.dart';
 import '../widgets/shared/tab_header.dart';
 import 'calculator/calculator_screen.dart';
 import 'converter_hub/converter_hub_screen.dart';
+import 'tools_hub/tools_hub_screen.dart';
 
 class MainShellScreen extends StatefulWidget {
   const MainShellScreen({super.key});
@@ -34,10 +35,20 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        ),
+        child: Column(
+          children: [
           TabHeader(
             activeIndex: _currentIndex,
             onTap: _onTabTapped,
@@ -53,10 +64,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
               children: const [
                 CalculatorScreen(),
                 ConverterHubScreen(),
+                MeasurementHubScreen(),
               ],
             ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -3,14 +3,29 @@ import '../core/utils/expression_evaluator.dart';
 
 class GstState {
   final String originalPrice;
-  final int gstRate; // Percentage (3, 5, 12, 18, 28)
+  final int gstRate; // Percentage (3, 5, 12, 18, 28, or custom)
   final bool addGst; // True to add GST, false to remove/extract GST
+  final List<int> customRates;
+
+  static const List<int> defaultRates = [3, 5, 12, 18, 28];
 
   const GstState({
     this.originalPrice = '',
     this.gstRate = 18,
     this.addGst = true,
+    this.customRates = const [],
   });
+
+  List<int> get availableRates {
+    final list = [...defaultRates];
+    for (final r in customRates) {
+      if (!list.contains(r)) {
+        list.add(r);
+      }
+    }
+    list.sort();
+    return list;
+  }
 
   double get priceDouble {
     final evaluated = ExpressionEvaluator.evaluate(originalPrice);
@@ -39,11 +54,13 @@ class GstState {
     String? originalPrice,
     int? gstRate,
     bool? addGst,
+    List<int>? customRates,
   }) {
     return GstState(
       originalPrice: originalPrice ?? this.originalPrice,
       gstRate: gstRate ?? this.gstRate,
       addGst: addGst ?? this.addGst,
+      customRates: customRates ?? this.customRates,
     );
   }
 }
@@ -106,6 +123,18 @@ class GstNotifier extends Notifier<GstState> {
 
   void setGstRate(int rate) {
     state = state.copyWith(gstRate: rate);
+  }
+
+  void addCustomRate(int rate) {
+    if (rate <= 0) return;
+    final List<int> updatedCustom = List.from(state.customRates);
+    if (!GstState.defaultRates.contains(rate) && !updatedCustom.contains(rate)) {
+      updatedCustom.add(rate);
+    }
+    state = state.copyWith(
+      customRates: updatedCustom,
+      gstRate: rate,
+    );
   }
 
   void toggleAddGst(bool add) {

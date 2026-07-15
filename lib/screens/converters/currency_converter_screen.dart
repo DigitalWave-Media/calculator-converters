@@ -8,7 +8,6 @@ import '../../providers/currency_provider.dart';
 import '../../widgets/shared/detail_header.dart';
 import '../../widgets/shared/unit_selector_field.dart';
 import '../../widgets/shared/numeric_keypad.dart';
-import '../../widgets/shared/bottom_drag_handle.dart';
 
 class CurrencyConverterScreen extends ConsumerStatefulWidget {
   const CurrencyConverterScreen({super.key});
@@ -54,13 +53,16 @@ class _CurrencyConverterScreenState extends ConsumerState<CurrencyConverterScree
       );
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.primaryDark : AppColors.primary;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: DetailHeader(
         title: 'Currency Converter',
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: AppColors.primary, size: 28),
+            icon: Icon(Icons.add_circle_outline, color: primaryColor, size: 28),
             onPressed: () {
               // Add a currency that is not already selected
               final unused = state.allCurrencies.firstWhere(
@@ -72,86 +74,93 @@ class _CurrencyConverterScreenState extends ConsumerState<CurrencyConverterScree
           ),
         ],
       ),
-      body: Column(
-        children: [
-          if (state.errorMessage != null)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                state.errorMessage!,
-                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            if (state.errorMessage != null)
+              Container(
+                color: Colors.red.shade50,
+                width: double.infinity,
+                padding: const EdgeInsets.all(8.0),
+                alignment: Alignment.center,
+                child: Text(
+                  state.errorMessage!,
+                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                ),
               ),
-            ),
-          
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.only(top: 8),
-              itemCount: state.selectedCurrencies.length,
-              itemBuilder: (context, index) {
-                final currency = state.selectedCurrencies[index];
-                final bool isActive = state.activeIsoCode == currency.isoCode;
-                
-                // Active field gets raw typing value; others show computed converted value
-                final String displayVal = isActive
-                    ? (state.activeValue.isEmpty ? '0' : state.activeValue)
-                    : notifier.getDisplayValue(currency.isoCode);
-
+            
+            Expanded(
+              child: () {
                 final List<UnitOption> pickerOptions = state.allCurrencies
                     .map((c) => mapToUnitOption(c))
                     .toList();
 
-                return Dismissible(
-                  key: Key(currency.isoCode),
-                  direction: state.selectedCurrencies.length > 1
-                      ? DismissDirection.endToStart
-                      : DismissDirection.none,
-                  background: Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 20.0),
-                    color: Colors.red,
-                    child: const Icon(Icons.delete, color: Colors.white),
-                  ),
-                  onDismissed: (_) {
-                    notifier.removeSelectedCurrency(index);
-                  },
-                  child: UnitSelectorField(
-                    label: currency.name,
-                    selectedUnit: mapToUnitOption(currency),
-                    displayValue: displayVal,
-                    options: pickerOptions,
-                    showSearch: true, // Enable search filter inside currency selector modal
-                    onUnitChanged: (unit) {
-                      final chosenCurrency = state.allCurrencies.firstWhere(
-                        (c) => c.isoCode == unit.abbreviation,
-                      );
-                      notifier.updateSelectedCurrency(index, chosenCurrency);
-                    },
-                    isActive: isActive,
-                    onTapField: () {
-                      notifier.selectActiveCurrency(currency.isoCode, displayVal == '0' ? '' : displayVal);
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-          
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              state.isLoading
-                  ? 'Updating exchange rates...'
-                  : 'Exchange rates provided by Open Exchange Rates API.',
-              style: AppTextStyles.bodySmall,
-            ),
-          ),
+                return ListView.builder(
+                  padding: const EdgeInsets.only(top: 8),
+                  itemCount: state.selectedCurrencies.length,
+                  itemBuilder: (context, index) {
+                    final currency = state.selectedCurrencies[index];
+                    final bool isActive = state.activeIsoCode == currency.isoCode;
+                    
+                    // Active field gets raw typing value; others show computed converted value
+                    final String displayVal = isActive
+                        ? (state.activeValue.isEmpty ? '0' : state.activeValue)
+                        : notifier.getDisplayValue(currency.isoCode);
 
-          NumericKeypad(
-            mode: KeypadMode.standard,
-            onKeyPressed: (key) => notifier.onKeypadInput(key),
-          ),
-          const BottomDragHandle(),
-        ],
+                    return Dismissible(
+                      key: ValueKey(currency.isoCode),
+                      direction: state.selectedCurrencies.length > 1
+                          ? DismissDirection.endToStart
+                          : DismissDirection.none,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20.0),
+                        color: Colors.red,
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      onDismissed: (_) {
+                        notifier.removeSelectedCurrency(index);
+                      },
+                      child: UnitSelectorField(
+                        label: currency.name,
+                        selectedUnit: mapToUnitOption(currency),
+                        displayValue: displayVal,
+                        options: pickerOptions,
+                        showSearch: true, // Enable search filter inside currency selector modal
+                        onUnitChanged: (unit) {
+                          final chosenCurrency = state.allCurrencies.firstWhere(
+                            (c) => c.isoCode == unit.abbreviation,
+                          );
+                          notifier.updateSelectedCurrency(index, chosenCurrency);
+                        },
+                        isActive: isActive,
+                        onTapField: () {
+                          notifier.selectActiveCurrency(currency.isoCode, displayVal == '0' ? '' : displayVal);
+                        },
+                      ),
+                    );
+                  },
+                );
+              }(),
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                state.isLoading
+                    ? 'Updating exchange rates...'
+                    : 'Exchange rates provided by Open Exchange Rates API.',
+                style: AppTextStyles.bodySmall,
+              ),
+            ),
+
+            NumericKeypad(
+              mode: KeypadMode.standard,
+              onKeyPressed: (key) => notifier.onKeypadInput(key),
+            ),
+          ],
+        ),
       ),
     );
   }

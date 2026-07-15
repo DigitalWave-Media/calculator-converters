@@ -14,6 +14,8 @@ class CurrencyState {
   final String activeValue; // Number string in editing field
   final bool isLoading;
   final String? errorMessage;
+  final bool isLiveRates; // true if rates came from a live API call
+  final DateTime? ratesTimestamp; // When the cached rates were last fetched
 
   const CurrencyState({
     this.allCurrencies = const [],
@@ -22,6 +24,8 @@ class CurrencyState {
     this.activeValue = '',
     this.isLoading = false,
     this.errorMessage,
+    this.isLiveRates = true,
+    this.ratesTimestamp,
   });
 
   CurrencyState copyWith({
@@ -31,6 +35,8 @@ class CurrencyState {
     String? activeValue,
     bool? isLoading,
     String? errorMessage,
+    bool? isLiveRates,
+    DateTime? ratesTimestamp,
   }) {
     return CurrencyState(
       allCurrencies: allCurrencies ?? this.allCurrencies,
@@ -39,6 +45,8 @@ class CurrencyState {
       activeValue: activeValue ?? this.activeValue,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage ?? this.errorMessage,
+      isLiveRates: isLiveRates ?? this.isLiveRates,
+      ratesTimestamp: ratesTimestamp ?? this.ratesTimestamp,
     );
   }
 }
@@ -46,14 +54,15 @@ class CurrencyState {
 class CurrencyNotifier extends Notifier<CurrencyState> {
   @override
   CurrencyState build() {
-    refreshRates();
+    Future.microtask(refreshRates);
     return const CurrencyState();
   }
 
   Future<void> refreshRates() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      final list = await ref.read(currencyRateServiceProvider).fetchRates();
+      final result = await ref.read(currencyRateServiceProvider).fetchRates();
+      final list = result.rates;
       
       List<CurrencyOption> selected = state.selectedCurrencies;
       if (selected.isEmpty) {
@@ -72,6 +81,9 @@ class CurrencyNotifier extends Notifier<CurrencyState> {
         allCurrencies: list,
         selectedCurrencies: selected,
         isLoading: false,
+        isLiveRates: result.isLive,
+        ratesTimestamp: result.cacheTimestamp,
+        errorMessage: result.isLive ? null : 'Using cached rates',
       );
     } catch (e) {
       state = state.copyWith(

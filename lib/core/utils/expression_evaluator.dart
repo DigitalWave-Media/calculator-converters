@@ -1,6 +1,11 @@
+import 'dart:isolate';
 import 'package:math_expressions/math_expressions.dart';
 
 class ExpressionEvaluator {
+  static Future<String> evaluateAsync(String expression) async {
+    return Isolate.run(() => evaluate(expression));
+  }
+
   static String evaluate(String expression) {
     try {
       // Sanitize the expression for the parser
@@ -19,10 +24,10 @@ class ExpressionEvaluator {
 
       if (sanitized.isEmpty) return '0';
 
-      Parser p = Parser();
+      GrammarParser p = GrammarParser();
       Expression exp = p.parse(sanitized);
       ContextModel cm = ContextModel();
-      double eval = exp.evaluate(EvaluationType.REAL, cm);
+      double eval = RealEvaluator(cm).evaluate(exp).toDouble();
 
       if (eval.isNaN) return 'Error';
       if (eval.isInfinite) return 'Infinity';

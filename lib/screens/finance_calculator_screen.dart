@@ -20,7 +20,7 @@ class FinanceCalculatorScreen extends ConsumerWidget {
     final isLoan = state.mode == FinanceMode.loan;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: const DetailHeader(title: 'Finance Calculator'),
       body: SafeArea(
         child: SingleChildScrollView(

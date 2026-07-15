@@ -1,5 +1,6 @@
 class AppRoutes {
   static const String root = '/';
+  static const String history = '/history';
   
   // Converters
   static const String length = '/converter/length';
@@ -20,4 +21,8 @@ class AppRoutes {
   static const String finance = '/finance';
   static const String date = '/date';
   static const String numToWord = '/num_to_word';
+  static const String measurement = '/measurement';
+  static const String measurementArea = '/measurement/area';
+  static const String measurementVolume = '/measurement/volume';
+  static const String measurementCalculator = '/measurement/calculator/:shapeId';
 }

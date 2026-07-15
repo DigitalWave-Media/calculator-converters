@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../models/unit_option.dart';
 import 'unit_picker_modal.dart';
 
@@ -13,6 +12,8 @@ class UnitSelectorField extends StatefulWidget {
   final bool isActive;
   final VoidCallback onTapField;
   final bool showSearch;
+  final double dropdownWidth;
+  final Offset dropdownOffset;
 
   const UnitSelectorField({
     super.key,
@@ -24,6 +25,8 @@ class UnitSelectorField extends StatefulWidget {
     required this.isActive,
     required this.onTapField,
     this.showSearch = false,
+    this.dropdownWidth = 240,
+    this.dropdownOffset = const Offset(16.0, 0.0),
   });
 
   @override
@@ -34,85 +37,92 @@ class _UnitSelectorFieldState extends State<UnitSelectorField> {
   final LayerLink _layerLink = LayerLink();
 
   @override
+  void dispose() {
+    UnitPickerDropdown.dismiss();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: GestureDetector(
-        onTap: widget.onTapField,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-          decoration: BoxDecoration(
-            color: widget.isActive ? Colors.white : Colors.white.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: widget.isActive ? AppColors.primary : Colors.transparent,
-              width: 1.5,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.label,
-                style: AppTextStyles.bodySmall,
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final unitNameColor = isDark ? Colors.white : AppColors.textDark;
+    final unitAbbrColor = isDark ? Colors.white70 : AppColors.textLight;
+    final valueColor = widget.isActive
+        ? (isDark ? AppColors.primaryDark : AppColors.primary)
+        : (isDark ? Colors.white : AppColors.textDark);
+    final activePrimary = isDark ? AppColors.primaryDark : AppColors.primary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          // Left side: Unit selector
+          CompositedTransformTarget(
+            link: _layerLink,
+            child: GestureDetector(
+              onTap: () {
+                widget.onTapField();
+                _showDropdown();
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
-                  // Unit Name & Abbreviation column
-                  GestureDetector(
-                    onTap: () {
-                      widget.onTapField();
-                      _showDropdown();
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Row(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.selectedUnit.name,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textDark,
-                              ),
-                            ),
-                            Text(
-                              widget.selectedUnit.abbreviation,
-                              style: AppTextStyles.labelLarge,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(
-                          Icons.keyboard_arrow_down,
-                          color: AppColors.primary,
-                        ),
-                      ],
+                  Text(
+                    widget.selectedUnit.name,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: unitNameColor,
                     ),
                   ),
-                  // Display value
-                  Expanded(
-                    child: Text(
-                      widget.displayValue,
-                      textAlign: TextAlign.end,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: widget.isActive ? AppColors.primary : AppColors.textDark,
-                      ),
+                  const SizedBox(width: 4),
+                  Text(
+                    widget.selectedUnit.abbreviation,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: unitAbbrColor,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Transform.translate(
+                    offset: const Offset(0, 2),
+                    child: Icon(
+                      Icons.unfold_more_rounded,
+                      color: widget.isActive ? activePrimary : unitAbbrColor,
+                      size: 18,
                     ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(width: 16),
+          // Right side: Value
+          Expanded(
+            child: GestureDetector(
+              onTap: widget.onTapField,
+              behavior: HitTestBehavior.opaque,
+              child: Text(
+                widget.displayValue,
+                textAlign: TextAlign.end,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: valueColor,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -124,6 +134,8 @@ class _UnitSelectorFieldState extends State<UnitSelectorField> {
       options: widget.options,
       selectedUnit: widget.selectedUnit,
       onSelected: widget.onUnitChanged,
+      width: widget.dropdownWidth,
+      offset: widget.dropdownOffset,
       showSearch: widget.showSearch,
     );
   }

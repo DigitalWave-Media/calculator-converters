@@ -16,7 +16,7 @@ class BMICalculatorScreen extends ConsumerWidget {
     final notifier = ref.read(bmiProvider.notifier);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: const DetailHeader(title: 'BMI Calculator'),
       body: SafeArea(
         child: SingleChildScrollView(

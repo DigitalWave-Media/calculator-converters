@@ -1,7 +1,5 @@
 import 'dart:math' as math;
-
-import 'package:flutter_riverpod/legacy.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:math_expressions/math_expressions.dart';
 
 class HistoryItem {
@@ -60,8 +58,11 @@ class FloatingCalculatorState {
   }
 }
 
-class FloatingCalculatorNotifier extends StateNotifier<FloatingCalculatorState> {
-  FloatingCalculatorNotifier() : super(const FloatingCalculatorState());
+class FloatingCalculatorNotifier extends Notifier<FloatingCalculatorState> {
+  @override
+  FloatingCalculatorState build() {
+    return const FloatingCalculatorState();
+  }
 
   void toggleScientific() {
     state = state.copyWith(isScientific: !state.isScientific);
@@ -239,6 +240,11 @@ class FloatingCalculatorNotifier extends StateNotifier<FloatingCalculatorState> 
 
   void clearHistory() {
     state = state.copyWith(history: const []);
+  }
+
+  void deleteHistoryItem(HistoryItem item) {
+    final newHistory = state.history.where((e) => e != item).toList();
+    state = state.copyWith(history: newHistory);
   }
 
   void _evaluateRealTime() {
@@ -479,6 +485,6 @@ class FloatingCalculatorNotifier extends StateNotifier<FloatingCalculatorState> 
   }
 }
 
-final floatingCalculatorProvider = StateNotifierProvider<FloatingCalculatorNotifier, FloatingCalculatorState>((ref) {
-  return FloatingCalculatorNotifier();
-});
+final floatingCalculatorProvider = NotifierProvider<FloatingCalculatorNotifier, FloatingCalculatorState>(
+  FloatingCalculatorNotifier.new,
+);

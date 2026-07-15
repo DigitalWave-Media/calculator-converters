@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "693216450585",
+    "project_id": "calculator-and-converters",
+    "storage_bucket": "calculator-and-converters.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:693216450585:android:7ae37a9d2845a29b30b288",
+        "android_client_info": {
+          "package_name": "com.digitalwave.calculatorconverters"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzbCaaaJtsb9TxzW_WhYYu3FnRKHZaiwo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

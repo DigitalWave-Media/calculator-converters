@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../core/constants/routes.dart';
 import '../core/constants/unit_tables.dart';
 import '../screens/main_shell_screen.dart';
+import '../screens/calculator/history_screen.dart';
 import '../screens/converters/generic_converter_screen.dart';
+import '../screens/converters/length_converter_screen.dart';
 import '../screens/converters/temperature_converter_screen.dart';
 import '../screens/converters/numeral_system_converter_screen.dart';
 import '../screens/converters/currency_converter_screen.dart';
@@ -14,6 +16,10 @@ import '../screens/bmi_calculator_screen.dart';
 import '../screens/finance_calculator_screen.dart';
 import '../screens/date_calculator_screen.dart';
 import '../screens/converters/number_to_word_converter_screen.dart';
+import '../screens/tools_hub/area_measurement_screen.dart';
+import '../screens/tools_hub/volume_measurement_screen.dart';
+import '../screens/tools_hub/shape_calculator_screen.dart';
+import '../services/measurement_calculator.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -24,11 +30,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.root,
         builder: (context, state) => const MainShellScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.history,
+        builder: (context, state) => const HistoryScreen(),
+      ),
       
       // Generic converters
       GoRoute(
         path: AppRoutes.length,
-        builder: (context, state) => const GenericConverterScreen(category: ConverterCategory.length),
+        builder: (context, state) => const LengthConverterScreen(),
       ),
       GoRoute(
         path: AppRoutes.mass,
@@ -93,6 +103,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.numToWord,
         builder: (context, state) => const NumberToWordConverterScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.measurementArea,
+        builder: (context, state) => const AreaMeasurementScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.measurementVolume,
+        builder: (context, state) => const VolumeMeasurementScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.measurementCalculator,
+        builder: (context, state) {
+          final shapeId = state.pathParameters['shapeId'] ?? 'square';
+          final shape = MeasurementCalculator.getShapeById(shapeId);
+          return ShapeCalculatorScreen(shape: shape);
+        },
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

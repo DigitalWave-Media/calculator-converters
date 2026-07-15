@@ -46,4 +46,50 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: AppColors.darkBackground,
+      primaryColor: AppColors.primaryDark,
+      colorScheme: const ColorScheme.dark(
+        primary: AppColors.primaryDark,
+        surface: AppColors.darkSurface,
+      ),
+      textTheme: TextTheme(
+        displayLarge: AppTextStyles.displayLarge.copyWith(color: Colors.white),
+        displayMedium: AppTextStyles.displayMedium.copyWith(color: Colors.white),
+        displaySmall: AppTextStyles.displaySmall.copyWith(color: Colors.white),
+        titleLarge: AppTextStyles.titleLarge.copyWith(color: Colors.white),
+        titleMedium: AppTextStyles.titleMedium.copyWith(color: AppColors.textSecondaryDark),
+        bodyLarge: AppTextStyles.bodyLarge.copyWith(color: Colors.white),
+        bodyMedium: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
+        bodySmall: AppTextStyles.bodySmall.copyWith(color: Colors.white60),
+        labelLarge: AppTextStyles.labelLarge.copyWith(color: Colors.white),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryDark,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.darkCardBg,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFF2C2C2E),
+        thickness: 1,
+      ),
+    );
+  }
 }
+

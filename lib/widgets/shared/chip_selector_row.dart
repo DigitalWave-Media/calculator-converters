@@ -8,6 +8,8 @@ class ChipSelectorRow<T> extends StatelessWidget {
   final Function(T) onChanged;
   final String Function(T) displayLabel;
 
+  final Widget? trailingWidget;
+
   const ChipSelectorRow({
     super.key,
     required this.label,
@@ -15,6 +17,7 @@ class ChipSelectorRow<T> extends StatelessWidget {
     required this.selectedValue,
     required this.onChanged,
     required this.displayLabel,
+    this.trailingWidget,
   });
 
   @override
@@ -36,34 +39,37 @@ class ChipSelectorRow<T> extends StatelessWidget {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: values.map((val) {
-                final isSelected = val == selectedValue;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: GestureDetector(
-                    onTap: () => onChanged(val),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected ? AppColors.primary : AppColors.divider.withValues(alpha: 0.5),
+              children: [
+                ...values.map((val) {
+                  final isSelected = val == selectedValue;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: GestureDetector(
+                      onTap: () => onChanged(val),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColors.primary : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected ? AppColors.primary : AppColors.divider.withValues(alpha: 0.5),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        displayLabel(val),
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.textDark,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                        child: Text(
+                          displayLabel(val),
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : AppColors.textDark,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }),
+                ?trailingWidget,
+              ],
             ),
           ),
         ],

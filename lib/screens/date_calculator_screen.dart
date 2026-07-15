@@ -5,7 +5,6 @@ import '../../core/theme/app_colors.dart';
 import '../../providers/date_diff_provider.dart';
 import '../../widgets/shared/detail_header.dart';
 import '../../widgets/shared/result_card.dart';
-import '../../widgets/shared/bottom_drag_handle.dart';
 
 class DateCalculatorScreen extends ConsumerWidget {
   const DateCalculatorScreen({super.key});
@@ -19,7 +18,7 @@ class DateCalculatorScreen extends ConsumerWidget {
     final dateFmt = DateFormat('dd MMMM yyyy');
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: const DetailHeader(title: 'Date Calculator'),
       body: SafeArea(
         child: Column(
@@ -105,8 +104,6 @@ class DateCalculatorScreen extends ConsumerWidget {
                 ),
               ),
             ),
-
-            const BottomDragHandle(),
           ],
         ),
       ),

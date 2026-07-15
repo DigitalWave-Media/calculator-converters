@@ -3,65 +3,39 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import 'calculator_state.dart';
 
-class CalculatorScreen extends ConsumerWidget {
+class CalculatorScreen extends StatelessWidget {
   const CalculatorScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final calcState = ref.watch(floatingCalculatorProvider);
-    final notifier = ref.read(floatingCalculatorProvider.notifier);
-
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: BoxConstraints(maxWidth: 480),
             child: Column(
               children: [
-                // 1. Header with history icon
-                _buildHeaderBar(context, notifier),
-
-                // 2. Main content area (Stack)
                 Expanded(
                   child: Stack(
                     children: [
                       Column(
                         children: [
-                          // Display Area — smaller flex pushes keypad up
                           Expanded(
-                            flex: 20,
-                            child: _buildDisplayArea(context, calcState),
+                            flex: 30,
+                            child: _DisplayAreaWidget(),
                           ),
-
-                          // Chevron toggle (Static Anchor)
-                          _buildChevronToggle(context, notifier, calcState.isScientific),
-
-                          // Keypad — larger flex stretches grid upward
+                          _ChevronToggleWidget(),
                           Expanded(
                             flex: 80,
-                            child: _buildKeypad(context, calcState, notifier),
+                            child: _KeypadWidget(),
                           ),
                         ],
-                      ),
-
-                      // History Overlay Panel
-                      _HistoryOverlay(
-                        isOpen: calcState.isHistoryOpen,
-                        history: calcState.history,
-                        onClearHistory: notifier.clearHistory,
-                        onTapItem: notifier.loadHistoryItem,
-                        onClose: () {
-                          if (calcState.isHistoryOpen) {
-                            notifier.toggleHistory();
-                          }
-                        },
                       ),
                     ],
                   ),
                 ),
-                
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
               ],
             ),
           ),
@@ -69,39 +43,20 @@ class CalculatorScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  // HEADER BAR WIDGET
-  Widget _buildHeaderBar(BuildContext context, FloatingCalculatorNotifier notifier) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          // History Toggle Button (Moved to top right)
-          IconButton(
-            icon: const Icon(Icons.history_rounded, size: 24),
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () {
-              notifier.toggleHistory();
-            },
-          ),
-        ],
-      ),
+class _DisplayAreaWidget extends ConsumerWidget {
+  const _DisplayAreaWidget();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final (expression, result, isCalculated, isScientific) = ref.watch(
+      floatingCalculatorProvider.select((s) => (s.expression, s.result, s.isCalculated, s.isScientific)),
     );
-  }
-
-  // DISPLAY AREA WIDGET
-  Widget _buildDisplayArea(BuildContext context, FloatingCalculatorState calcState) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: calcState.isScientific ? 1.0 : 0.0, end: calcState.isScientific ? 1.0 : 0.0),
+      tween: Tween(begin: isScientific ? 1.0 : 0.0, end: isScientific ? 1.0 : 0.0),
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeOutCubic,
       builder: (context, sciT, child) {
@@ -115,13 +70,12 @@ class CalculatorScreen extends ConsumerWidget {
               color: Colors.transparent,
               child: Stack(
                 children: [
-                  // EXPRESSION TEXT — pinned to top-right, larger & bold
                   AnimatedAlign(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeOutCubic,
-                    alignment: calcState.isCalculated ? Alignment.topRight : Alignment.topRight,
+                    alignment: Alignment.topRight,
                     child: Padding(
-                      padding: EdgeInsets.only(top: calcState.isCalculated ? 0 : 0),
+                      padding: EdgeInsets.only(top: isCalculated ? 0 : 0),
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.topRight,
@@ -133,27 +87,25 @@ class CalculatorScreen extends ConsumerWidget {
                               curve: Curves.easeOutCubic,
                               style: TextStyle(
                                 fontFamily: 'Roboto',
-                                fontSize: calcState.isCalculated ? 28 : 75,
-                                fontWeight: FontWeight.w700,
+                                fontSize: isCalculated ? 42 : 105,
+                                fontWeight: FontWeight.normal,
                                 color: isDark
-                                    ? (calcState.isCalculated ? AppColors.textSecondaryDark : AppColors.textPrimaryDark)
-                                    : (calcState.isCalculated ? AppColors.textSecondaryLight : AppColors.textPrimaryLight),
+                                    ? (isCalculated ? const Color(0xFFF5F5F5).withValues(alpha: 0.7) : Colors.white)
+                                    : (isCalculated ? AppColors.textSecondaryLight : AppColors.textPrimaryLight),
                               ),
                               child: Text(
-                                calcState.expression.isEmpty ? '0' : (calcState.expression + (calcState.isCalculated ? ' =' : '')),
+                                expression.isEmpty ? '0' : (expression + (isCalculated ? ' =' : '')),
                               ),
                             ),
-                            if (!calcState.isCalculated) ...[
+                            if (!isCalculated) ...[
                               const SizedBox(width: 2),
-                              const BlinkingCursor(),
+                              const RepaintBoundary(child: BlinkingCursor()),
                             ],
                           ],
                         ),
                       ),
                     ),
                   ),
-
-                  // RESULT TEXT
                   AnimatedAlign(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeOutCubic,
@@ -166,16 +118,16 @@ class CalculatorScreen extends ConsumerWidget {
                         curve: Curves.easeOutCubic,
                         style: TextStyle(
                           fontFamily: 'Roboto',
-                          fontSize: calcState.isCalculated ? 60 : 32,
-                          fontWeight: calcState.isCalculated ? FontWeight.w700 : FontWeight.w500,
-                          color: calcState.isCalculated
-                              ? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)
-                              : (isDark ? const Color(0xFFC9A6BA) : const Color(0xFF6E4D60)),
+                          fontSize: isCalculated ? 85 : 48,
+                          fontWeight: FontWeight.normal,
+                          color: isCalculated
+                              ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                              : (isDark ? Colors.white70 : const Color(0xFF6E4D60)),
                         ),
                         child: AnimatedOpacity(
                           duration: const Duration(milliseconds: 200),
-                          opacity: calcState.result.isEmpty ? 0.0 : 1.0,
-                          child: Text(calcState.result),
+                          opacity: result.isEmpty ? 0.0 : 1.0,
+                          child: Text(result),
                         ),
                       ),
                     ),
@@ -188,10 +140,17 @@ class CalculatorScreen extends ConsumerWidget {
       },
     );
   }
+}
 
-  // KEYPAD EXPANDER CHEVRON
-  Widget _buildChevronToggle(BuildContext context, FloatingCalculatorNotifier notifier, bool isScientific) {
+class _ChevronToggleWidget extends ConsumerWidget {
+  const _ChevronToggleWidget();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isScientific = ref.watch(floatingCalculatorProvider.select((s) => s.isScientific));
+    final notifier = ref.read(floatingCalculatorProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -214,13 +173,17 @@ class CalculatorScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  // KEYPAD WIDGET
-  Widget _buildKeypad(
-    BuildContext context, 
-    FloatingCalculatorState calcState, 
-    FloatingCalculatorNotifier notifier,
-  ) {
+class _KeypadWidget extends ConsumerWidget {
+  const _KeypadWidget();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final (isScientific, isDegree, isInverse) = ref.watch(
+      floatingCalculatorProvider.select((s) => (s.isScientific, s.isDegree, s.isInverse)),
+    );
+    final notifier = ref.read(floatingCalculatorProvider.notifier);
     const double keyPadding = 2.0;
 
     return LayoutBuilder(
@@ -229,7 +192,7 @@ class CalculatorScreen extends ConsumerWidget {
         final sciTargetHeight = totalHeight * (3 / 8);
 
         return TweenAnimationBuilder<double>(
-          tween: Tween(begin: calcState.isScientific ? 1.0 : 0.0, end: calcState.isScientific ? 1.0 : 0.0),
+          tween: Tween(begin: isScientific ? 1.0 : 0.0, end: isScientific ? 1.0 : 0.0),
           duration: const Duration(milliseconds: 350),
           curve: Curves.easeOutCubic,
           builder: (context, t, child) {
@@ -255,16 +218,16 @@ class CalculatorScreen extends ConsumerWidget {
                               _KeySpec('!', action: () => notifier.append('!')),
                             ], keyPadding, isSci: true)),
                             Expanded(child: _buildKeyRow([
-                              _KeySpec(calcState.isDegree ? 'Rad' : 'Deg', tagText: calcState.isDegree ? 'DEG' : 'RAD', action: notifier.toggleDegree),
-                              _KeySpec(calcState.isInverse ? 'sin⁻¹' : 'sin', action: () => notifier.append(calcState.isInverse ? 'asin' : 'sin')),
-                              _KeySpec(calcState.isInverse ? 'cos⁻¹' : 'cos', action: () => notifier.append(calcState.isInverse ? 'acos' : 'cos')),
-                              _KeySpec(calcState.isInverse ? 'tan⁻¹' : 'tan', action: () => notifier.append(calcState.isInverse ? 'atan' : 'tan')),
+                              _KeySpec(isDegree ? 'Rad' : 'Deg', tagText: isDegree ? 'DEG' : 'RAD', action: notifier.toggleDegree),
+                              _KeySpec(isInverse ? 'sin⁻¹' : 'sin', action: () => notifier.append(isInverse ? 'asin' : 'sin')),
+                              _KeySpec(isInverse ? 'cos⁻¹' : 'cos', action: () => notifier.append(isInverse ? 'acos' : 'cos')),
+                              _KeySpec(isInverse ? 'tan⁻¹' : 'tan', action: () => notifier.append(isInverse ? 'atan' : 'tan')),
                             ], keyPadding, isSci: true)),
                             Expanded(child: _buildKeyRow([
-                              _KeySpec(calcState.isInverse ? 'eˣ' : 'ln', action: () => notifier.append(calcState.isInverse ? 'e^' : 'ln')),
-                              _KeySpec(calcState.isInverse ? '10ˣ' : 'log', action: () => notifier.append(calcState.isInverse ? '10^' : 'log')),
+                              _KeySpec(isInverse ? 'eˣ' : 'ln', action: () => notifier.append(isInverse ? 'e^' : 'ln')),
+                              _KeySpec(isInverse ? '10ˣ' : 'log', action: () => notifier.append(isInverse ? '10^' : 'log')),
                               _KeySpec('e', action: () => notifier.append('e')),
-                              _KeySpec('Inv', tagText: calcState.isInverse ? 'ON' : null, action: notifier.toggleInverse),
+                              _KeySpec('Inv', tagText: isInverse ? 'ON' : null, action: notifier.toggleInverse),
                             ], keyPadding, isSci: true)),
                           ],
                         ),
@@ -317,7 +280,6 @@ class CalculatorScreen extends ConsumerWidget {
     );
   }
 
-  // Row builder for layout grid — enforces circular buttons via AspectRatio
   Widget _buildKeyRow(List<_KeySpec> keys, double padding, {bool isSci = false}) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: padding / 2),
@@ -370,6 +332,7 @@ class _CalculatorKeyButton extends StatefulWidget {
   final bool isSci;
 
   const _CalculatorKeyButton({
+    super.key,
     required this.spec,
     required this.isSci,
   });
@@ -447,64 +410,54 @@ class _CalculatorKeyButtonState extends State<_CalculatorKeyButton> with SingleT
             ],
           ),
           alignment: Alignment.center,
-          child: Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: widget.spec.isIcon
-                  ? Icon(
-                      widget.spec.icon,
-                      size: 28,
-                      color: textColor,
-                    )
-                  : (widget.spec.tagText != null)
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              widget.spec.label,
-                              style: TextStyle(
-                                fontFamily: 'Roboto',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: widget.spec.tagText == 'DEG'
-                                    ? const Color(0xFF8B5CF6).withValues(alpha: 0.12)
-                                    : const Color(0xFF10B981).withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                widget.spec.tagText!,
-                                style: TextStyle(
-                                  fontFamily: 'Roboto',
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: widget.spec.tagText == 'DEG'
-                                      ? const Color(0xFF8B5CF6)
-                                      : const Color(0xFF10B981),
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      : Text(
+          child: widget.spec.isIcon
+              ? Icon(
+                  widget.spec.icon,
+                  size: 28,
+                  color: textColor,
+                )
+              : (widget.spec.tagText != null)
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
                           widget.spec.label,
                           style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: widget.isSci ? 18 : 30,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                             color: textColor,
                           ),
                         ),
-            ),
-          ),
+                        const SizedBox(height: 2),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: widget.spec.tagText == 'DEG'
+                                ? const Color(0xFF8B5CF6).withValues(alpha: 0.12)
+                                : const Color(0xFF10B981).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            widget.spec.tagText!,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: widget.spec.tagText == 'DEG'
+                                  ? const Color(0xFF8B5CF6)
+                                  : const Color(0xFF10B981),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      widget.spec.label,
+                      style: TextStyle(
+                        fontSize: widget.isSci ? 18 : 30,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
         ),
       ),
     );
@@ -547,311 +500,6 @@ class _BlinkingCursorState extends State<BlinkingCursor> with SingleTickerProvid
         height: 65,
         color: isDark ? const Color(0xFF90CAF9) : const Color(0xFF4C5D8B),
       ),
-    );
-  }
-}
-
-class _GroupedHistory {
-  final String title;
-  final List<HistoryItem> items;
-
-  _GroupedHistory(this.title, this.items);
-}
-
-class _HistoryOverlay extends StatefulWidget {
-  final bool isOpen;
-  final List<HistoryItem> history;
-  final VoidCallback onClearHistory;
-  final ValueChanged<HistoryItem> onTapItem;
-  final VoidCallback onClose;
-
-  const _HistoryOverlay({
-    required this.isOpen,
-    required this.history,
-    required this.onClearHistory,
-    required this.onTapItem,
-    required this.onClose,
-  });
-
-  @override
-  State<_HistoryOverlay> createState() => _HistoryOverlayState();
-}
-
-class _HistoryOverlayState extends State<_HistoryOverlay> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Offset> _slideAnimation;
-  double _dragOffset = 0.0;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, -1.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    ));
-
-    _controller.addListener(() {
-      setState(() {});
-    });
-
-    if (widget.isOpen) {
-      _controller.value = 1.0;
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _HistoryOverlay oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isOpen != oldWidget.isOpen) {
-      if (widget.isOpen) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _handleVerticalDragUpdate(DragUpdateDetails details) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    _dragOffset += details.primaryDelta ?? 0.0;
-    final dragFraction = _dragOffset / (screenHeight * 0.7);
-    _controller.value = (1.0 + dragFraction).clamp(0.0, 1.0);
-  }
-
-  void _handleVerticalDragEnd(DragEndDetails details) {
-    final double velocity = details.primaryVelocity ?? 0.0;
-    if (_controller.value < 0.75 || velocity < -300) {
-      widget.onClose();
-    } else {
-      _controller.forward();
-    }
-    _dragOffset = 0.0;
-  }
-
-  List<_GroupedHistory> _groupHistory(List<HistoryItem> history) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-
-    final List<HistoryItem> todayItems = [];
-    final List<HistoryItem> yesterdayItems = [];
-    final List<HistoryItem> earlierItems = [];
-
-    for (final item in history) {
-      final itemDate = DateTime(item.timestamp.year, item.timestamp.month, item.timestamp.day);
-      if (itemDate == today) {
-        todayItems.add(item);
-      } else if (itemDate == yesterday) {
-        yesterdayItems.add(item);
-      } else {
-        earlierItems.add(item);
-      }
-    }
-
-    final List<_GroupedHistory> groups = [];
-    if (todayItems.isNotEmpty) {
-      groups.add(_GroupedHistory('Today', todayItems));
-    }
-    if (yesterdayItems.isNotEmpty) {
-      groups.add(_GroupedHistory('Yesterday', yesterdayItems));
-    }
-    if (earlierItems.isNotEmpty) {
-      groups.add(_GroupedHistory('Earlier', earlierItems));
-    }
-
-    return groups;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isVisible = widget.isOpen || !_controller.isDismissed;
-    if (!isVisible) {
-      return const SizedBox.shrink();
-    }
-
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    final panelBgColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFFFF);
-    final shadowColor = Colors.black.withValues(alpha: isDark ? 0.3 : 0.08);
-
-    return Positioned.fill(
-      child: Stack(
-        children: [
-          IgnorePointer(
-            ignoring: _controller.value == 0.0,
-            child: GestureDetector(
-              onTap: widget.onClose,
-              child: Opacity(
-                opacity: _controller.value * 0.4,
-                child: Container(
-                  color: Colors.black,
-                ),
-              ),
-            ),
-          ),
-          FractionalTranslation(
-            translation: _slideAnimation.value - Offset.zero,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.65,
-                decoration: BoxDecoration(
-                  color: panelBgColor,
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: shadowColor,
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: widget.history.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.history_toggle_off_rounded,
-                                    size: 48,
-                                    color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'No history yet',
-                                    style: TextStyle(
-                                      fontFamily: 'Roboto',
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                      color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : _buildGroupedList(isDark),
-                    ),
-                    GestureDetector(
-                      onVerticalDragUpdate: _handleVerticalDragUpdate,
-                      onVerticalDragEnd: _handleVerticalDragEnd,
-                      behavior: HitTestBehavior.opaque,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        alignment: Alignment.center,
-                        child: Container(
-                          width: 48,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white24 : Colors.black12,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGroupedList(bool isDark) {
-    final groups = _groupHistory(widget.history);
-
-    return ListView.builder(
-      itemCount: groups.length,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemBuilder: (context, groupIndex) {
-        final group = groups[groupIndex];
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 8, left: 8),
-              child: Text(
-                group.title.toUpperCase(),
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                  color: isDark ? AppColors.primaryDark : AppColors.primaryLight,
-                ),
-              ),
-            ),
-            ...group.items.map((item) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => widget.onTapItem(item),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              item.expression,
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                  fontFamily: 'Roboto',
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w400,
-                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '= ${item.result}',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontFamily: 'Roboto',
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: isDark ? const Color(0xFFC9A6BA) : const Color(0xFF6E4D60),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ],
-        );
-      },
     );
   }
 }

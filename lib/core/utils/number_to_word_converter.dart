@@ -1,4 +1,18 @@
+import 'dart:isolate';
+
 class NumberToWordConverter {
+  static Future<String> toEnglishAsync(int number) async {
+    return Isolate.run(() => toEnglish(number));
+  }
+
+  static Future<String> toHindiAsync(int number) async {
+    return Isolate.run(() => toHindi(number));
+  }
+
+  static Future<String> toBengaliAsync(int number) async {
+    return Isolate.run(() => toBengali(number));
+  }
+
   static String toEnglish(int number) {
     if (number == 0) return 'Zero';
     final sign = number < 0 ? 'Minus ' : '';

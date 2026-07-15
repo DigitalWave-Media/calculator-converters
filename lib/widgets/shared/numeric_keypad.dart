@@ -5,6 +5,7 @@ import 'keypad_key.dart';
 enum KeypadMode { standard, hex, temperature, partial }
 
 class NumericKeypad extends StatelessWidget {
+  static final RegExp _hexRegExp = RegExp(r'^[A-F]$');
   final KeypadMode mode;
   final Function(String) onKeyPressed;
   final bool Function(String)? isKeyEnabled;
@@ -66,8 +67,10 @@ class NumericKeypad extends StatelessWidget {
         break;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      color: const Color(0xFFF5F5F7),
+      color: isDark ? AppColors.darkKeypadBg : const Color(0xFFF5F5F7),
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -78,22 +81,44 @@ class NumericKeypad extends StatelessWidget {
                 return const Expanded(child: SizedBox.shrink());
               }
 
-              // Decide key colors
-              Color bg = Colors.white;
-              Color text = AppColors.textDark;
+              // Decide key colors based on light vs dark theme
+              Color bg;
+              Color text;
 
-              if (key == '=' || key == 'Calculate') {
-                bg = AppColors.primary;
-                text = Colors.white;
-              } else if (key == 'Clear' || key == '⌫' || key == '( )' || key == '+/-') {
-                bg = Colors.white;
-                text = AppColors.primary;
-              } else if (_isOperator(key)) {
-                bg = Colors.white;
-                text = AppColors.primary;
-              } else if (key == '%') {
-                bg = Colors.white;
-                text = AppColors.primary.withValues(alpha: 0.4);
+              if (isDark) {
+                if (key == '=' || key == 'Calculate') {
+                  bg = AppColors.darkKeyAction;
+                  text = Colors.white;
+                } else if (key == 'Clear' ||
+                    key == '⌫' ||
+                    key == '( )' ||
+                    key == '+/-' ||
+                    key == '%' ||
+                    _isOperator(key) ||
+                    _hexRegExp.hasMatch(key)) {
+                  bg = AppColors.darkKeyFunction;
+                  text = Colors.white;
+                } else {
+                  bg = AppColors.darkKeyNumeric;
+                  text = Colors.white;
+                }
+              } else {
+                if (key == '=' || key == 'Calculate') {
+                  bg = AppColors.primary;
+                  text = Colors.white;
+                } else if (key == 'Clear' || key == '⌫' || key == '( )' || key == '+/-') {
+                  bg = Colors.white;
+                  text = AppColors.primary;
+                } else if (_isOperator(key)) {
+                  bg = Colors.white;
+                  text = AppColors.primary;
+                } else if (key == '%') {
+                  bg = Colors.white;
+                  text = AppColors.primary.withValues(alpha: 0.4);
+                } else {
+                  bg = Colors.white;
+                  text = AppColors.textDark;
+                }
               }
 
               final bool enabled = _checkEnabled(key);

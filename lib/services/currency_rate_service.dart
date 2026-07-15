@@ -1,7 +1,20 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/currency_option.dart';
+
+class CurrencyFetchResult {
+  final List<CurrencyOption> rates;
+  final bool isLive;
+  final DateTime? cacheTimestamp;
+
+  const CurrencyFetchResult({
+    required this.rates,
+    required this.isLive,
+    this.cacheTimestamp,
+  });
+}
 
 class CurrencyRateService {
   final Dio _dio = Dio();
@@ -39,7 +52,7 @@ class CurrencyRateService {
     const CurrencyOption(name: 'Singapore Dollar', isoCode: 'SGD', rate: 1.35),
   ];
 
-  Future<List<CurrencyOption>> fetchRates() async {
+  Future<CurrencyFetchResult> fetchRates() async {
     try {
       final response = await _dio.get('https://open.er-api.com/v6/latest/USD');
       if (response.statusCode == 200) {
@@ -57,14 +70,21 @@ class CurrencyRateService {
         // Save to cache
         if (fetchedList.isNotEmpty) {
           await _saveToCache(fetchedList);
-          return fetchedList;
+          return CurrencyFetchResult(rates: fetchedList, isLive: true);
         }
       }
-    } catch (_) {
-      // Fallback to cache or defaults
+    } catch (e, st) {
+      debugPrint('CurrencyRateService.fetchRates failed: $e\n$st');
     }
 
-    return await _loadFromCache();
+    // Fallback to cache or defaults
+    final cached = await _loadFromCache();
+    final timestamp = await _getCacheTimestamp();
+    return CurrencyFetchResult(
+      rates: cached,
+      isLive: false,
+      cacheTimestamp: timestamp,
+    );
   }
 
   Future<void> _saveToCache(List<CurrencyOption> list) async {
@@ -73,7 +93,9 @@ class CurrencyRateService {
       final String jsonStr = json.encode(list.map((item) => item.toJson()).toList());
       await prefs.setString(_ratesCacheKey, jsonStr);
       await prefs.setInt(_timestampCacheKey, DateTime.now().millisecondsSinceEpoch);
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('CurrencyRateService._saveToCache failed: $e\n$st');
+    }
   }
 
   Future<List<CurrencyOption>> _loadFromCache() async {
@@ -86,7 +108,22 @@ class CurrencyRateService {
             .map((item) => CurrencyOption.fromJson(item as Map<String, dynamic>))
             .toList();
       }
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('CurrencyRateService._loadFromCache failed: $e\n$st');
+    }
     return defaultRates;
+  }
+
+  Future<DateTime?> _getCacheTimestamp() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final int? ms = prefs.getInt(_timestampCacheKey);
+      if (ms != null) {
+        return DateTime.fromMillisecondsSinceEpoch(ms);
+      }
+    } catch (e, st) {
+      debugPrint('CurrencyRateService._getCacheTimestamp failed: $e\n$st');
+    }
+    return null;
   }
 }

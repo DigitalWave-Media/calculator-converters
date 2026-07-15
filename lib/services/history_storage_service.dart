@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/history_entry.dart';
 
@@ -12,7 +13,8 @@ class HistoryStorageService {
       return list
           .map((item) => HistoryEntry.fromJson(json.decode(item) as Map<String, dynamic>))
           .toList();
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('HistoryStorageService.getHistory failed: $e\n$st');
       return [];
     }
   }
@@ -22,13 +24,17 @@ class HistoryStorageService {
       final prefs = await SharedPreferences.getInstance();
       final list = history.map((item) => json.encode(item.toJson())).toList();
       await prefs.setStringList(_key, list);
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('HistoryStorageService.saveHistory failed: $e\n$st');
+    }
   }
 
   Future<void> clearHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_key);
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('HistoryStorageService.clearHistory failed: $e\n$st');
+    }
   }
 }

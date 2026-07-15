@@ -62,6 +62,24 @@ void main() {
     test('Fahrenheit to Celsius', () {
       expect(TemperatureConverter.convert(32, 'Fahrenheit', 'Celsius'), 0.0);
     });
+
+    test('Celsius to Rankine', () {
+      expect(TemperatureConverter.convert(0, 'Celsius', 'Rankine'), closeTo(491.67, 0.01));
+      expect(TemperatureConverter.convert(-273.15, 'Celsius', 'Rankine'), closeTo(0.0, 0.01));
+    });
+
+    test('Rankine to Celsius', () {
+      expect(TemperatureConverter.convert(491.67, 'Rankine', 'Celsius'), closeTo(0.0, 0.01));
+    });
+
+    test('Celsius to Réaumur', () {
+      expect(TemperatureConverter.convert(100, 'Celsius', 'Réaumur'), closeTo(80.0, 0.01));
+      expect(TemperatureConverter.convert(0, 'Celsius', 'Réaumur'), closeTo(0.0, 0.01));
+    });
+
+    test('Réaumur to Celsius', () {
+      expect(TemperatureConverter.convert(80, 'Réaumur', 'Celsius'), closeTo(100.0, 0.01));
+    });
   });
 
   group('DateDiffCalculator calendar-aware tests', () {

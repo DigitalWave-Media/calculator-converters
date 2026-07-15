@@ -8,7 +8,7 @@
 PRODUCT_NAME = calculator_converters
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.calculator.converters.calculatorConverters
+PRODUCT_BUNDLE_IDENTIFIER = com.digitalwave.calculatorconverters
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.calculator.converters. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.digitalwave. All rights reserved.
