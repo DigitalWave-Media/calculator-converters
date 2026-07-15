@@ -332,7 +332,6 @@ class _CalculatorKeyButton extends StatefulWidget {
   final bool isSci;
 
   const _CalculatorKeyButton({
-    super.key,
     required this.spec,
     required this.isSci,
   });
